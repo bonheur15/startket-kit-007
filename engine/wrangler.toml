@@ -1,0 +1,20 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "starterkit-engine"
+main = "src/index.ts"
+compatibility_date = "2026-06-03"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_NAME = "starterkit-engine"
+NODE_ENV = "production"
+PORT = "3000"
+CORS_ORIGIN = "*"
+DEBUG_API = "false"
+
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true

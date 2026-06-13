@@ -1,0 +1,48 @@
+name: Deploy Web to Cloudflare Pages
+
+on:
+  # manual trigger
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - "web/**"
+      - "engine/**"
+      - "Makefile"
+  pull_request:
+    paths:
+      - "web/**"
+      - "engine/**"
+      - "Makefile"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: make install
+
+      - name: Build Web Application
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: make build
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler pages deploy web/dist --project-name=starterkit-007

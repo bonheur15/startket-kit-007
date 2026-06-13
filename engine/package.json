@@ -1,0 +1,29 @@
+{
+	"name": "engine",
+	"version": "0.1.0",
+	"module": "src/index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"generate": "bun run scripts/generate.ts",
+		"generate:watch": "bun run scripts/generate.ts --watch",
+		"dev": "bun run generate && bun --watch src/index.ts",
+		"start": "bun src/index.ts",
+		"build": "bun run generate && bun build ./src/index.ts --target bun --outdir dist",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit",
+		"db:push": "drizzle-kit push",
+		"worker:dev": "bun run generate && wrangler dev",
+		"worker:deploy": "bun run generate && wrangler deploy"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"drizzle-kit": "^0.31.10",
+		"typescript": "^6.0.2",
+		"wrangler": "^4.98.0"
+	},
+	"dependencies": {
+		"@neondatabase/serverless": "^1.1.0",
+		"drizzle-orm": "^0.45.2"
+	}
+}

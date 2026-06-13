@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+engine/node_modules/
+web/node_modules/
+
+# Build output
+dist/
+engine/dist/
+web/dist/
+
+# TypeScript and tool caches
+*.tsbuildinfo
+.cache/
+.tmp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+engine/.env
+engine/.env.local
+engine/.env.*.local
+web/.env
+web/.env.local
+web/.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Generated
+.generated/
+
+# Cloudflare wrangler
+.wrangler/
+.dev.vars

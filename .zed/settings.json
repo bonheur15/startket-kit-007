@@ -1,0 +1,68 @@
+{
+	"format_on_save": "on",
+	"languages": {
+		"TypeScript": {
+			"language_servers": ["biome", "typescript-language-server"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"TSX": {
+			"language_servers": ["biome", "typescript-language-server"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"JavaScript": {
+			"language_servers": ["biome", "typescript-language-server"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"JSX": {
+			"language_servers": ["biome", "typescript-language-server"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"JSON": {
+			"language_servers": ["biome"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"JSONC": {
+			"language_servers": ["biome"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		},
+		"CSS": {
+			"language_servers": ["biome", "tailwindcss-language-server"],
+			"formatter": {
+				"external": {
+					"command": "./node_modules/.bin/biome",
+					"arguments": ["format", "--write", "--stdin-file-path={buffer_path}"]
+				}
+			}
+		}
+	}
+}

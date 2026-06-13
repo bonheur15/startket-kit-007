@@ -1,0 +1,852 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "starterkit-engine API",
+		"version": "v1",
+		"description": "Generated OpenAPI document from inferred TypeScript endpoint types."
+	},
+	"servers": [
+		{
+			"url": "http://0.0.0.0:3000"
+		}
+	],
+	"paths": {
+		"/api/v1/auth/logout": {
+			"post": {
+				"operationId": "createAuthLogout",
+				"summary": "createAuthLogout",
+				"tags": [],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": ["success"],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/auth/me": {
+			"get": {
+				"operationId": "getAuthMe",
+				"summary": "getAuthMe",
+				"tags": [],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "number"
+												},
+												"email": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string",
+													"nullable": true
+												},
+												"picture": {
+													"type": "string",
+													"nullable": true
+												}
+											},
+											"required": ["id", "email", "name", "picture"],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/heavy-test": {
+			"post": {
+				"operationId": "postHeavyTestComplex",
+				"summary": "postHeavyTestComplex",
+				"tags": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"unionField": {
+										"oneOf": [
+											{
+												"type": "string"
+											},
+											{
+												"type": "number"
+											}
+										],
+										"nullable": true
+									},
+									"intersectionField": {
+										"type": "object",
+										"properties": {
+											"id": {
+												"type": "string"
+											},
+											"name": {
+												"type": "string"
+											},
+											"age": {
+												"type": "number"
+											}
+										},
+										"required": ["id", "name"],
+										"additionalProperties": false
+									},
+									"recordField": {
+										"type": "object",
+										"additionalProperties": {
+											"type": "object",
+											"properties": {
+												"role": {
+													"type": "string",
+													"enum": ["admin", "user"]
+												},
+												"joinedAt": {
+													"type": "string",
+													"description": "Date string"
+												}
+											},
+											"required": ["role", "joinedAt"],
+											"additionalProperties": false
+										}
+									},
+									"dateField": {
+										"type": "string",
+										"description": "Date string"
+									},
+									"arrayField": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"sku": {
+													"type": "string"
+												},
+												"price": {
+													"type": "number"
+												}
+											},
+											"required": ["sku", "price"],
+											"additionalProperties": false
+										}
+									},
+									"tupleField": {
+										"type": "array",
+										"items": {
+											"oneOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "number"
+												}
+											]
+										}
+									}
+								},
+								"required": [
+									"intersectionField",
+									"recordField",
+									"dateField",
+									"arrayField",
+									"tupleField"
+								],
+								"additionalProperties": false
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"status": {
+													"type": "string",
+													"enum": ["success", "error"]
+												},
+												"processedAt": {
+													"type": "string",
+													"description": "Date string"
+												},
+												"result": {
+													"type": "object",
+													"properties": {
+														"echoedUnion": {
+															"oneOf": [
+																{
+																	"type": "string"
+																},
+																{
+																	"type": "number"
+																}
+															],
+															"nullable": true
+														},
+														"mergedInfo": {
+															"type": "object",
+															"properties": {
+																"id": {
+																	"type": "string"
+																},
+																"name": {
+																	"type": "string"
+																},
+																"age": {
+																	"type": "number"
+																}
+															},
+															"required": ["id", "name"],
+															"additionalProperties": false
+														},
+														"recordSummary": {
+															"type": "object",
+															"additionalProperties": {
+																"type": "string"
+															}
+														},
+														"itemCount": {
+															"type": "number"
+														},
+														"tupleValue": {
+															"type": "array",
+															"items": {
+																"oneOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "number"
+																	}
+																]
+															}
+														}
+													},
+													"required": [
+														"echoedUnion",
+														"mergedInfo",
+														"recordSummary",
+														"itemCount",
+														"tupleValue"
+													],
+													"additionalProperties": false
+												}
+											},
+											"required": ["status", "processedAt", "result"],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/system/health": {
+			"get": {
+				"operationId": "getSystemHealth",
+				"summary": "getSystemHealth",
+				"tags": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "verbose",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"service": {
+													"type": "string"
+												},
+												"environment": {
+													"type": "string"
+												},
+												"version": {
+													"const": "v1",
+													"type": "string"
+												},
+												"testingenv": {
+													"type": "string"
+												},
+												"status": {
+													"const": "healthy",
+													"type": "string"
+												},
+												"uptimeMs": {
+													"type": "number"
+												},
+												"timestamp": {
+													"type": "string"
+												},
+												"checks": {
+													"type": "object",
+													"properties": {
+														"runtime": {
+															"type": "string",
+															"enum": ["bun", "cloudflare-workers"]
+														},
+														"docs": {
+															"type": "string"
+														}
+													},
+													"required": ["runtime", "docs"],
+													"additionalProperties": false
+												}
+											},
+											"required": [
+												"service",
+												"environment",
+												"version",
+												"testingenv",
+												"status",
+												"uptimeMs",
+												"timestamp"
+											],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/system/ping-pong": {
+			"get": {
+				"operationId": "getPingPong",
+				"summary": "getPingPong",
+				"tags": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "message",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "repeat",
+						"required": false,
+						"schema": {
+							"type": "number"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"received": {
+													"type": "string"
+												},
+												"reply": {
+													"type": "string"
+												},
+												"exchange": {
+													"type": "string"
+												},
+												"repeated": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"received",
+												"reply",
+												"exchange",
+												"repeated",
+												"timestamp"
+											],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/todos/:id/delete": {
+			"delete": {
+				"operationId": "deleteTodo",
+				"summary": "deleteTodo",
+				"tags": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": ["success"],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/todos/:id/update": {
+			"put": {
+				"operationId": "updateTodo",
+				"summary": "updateTodo",
+				"tags": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"completed": {
+										"type": "boolean"
+									},
+									"title": {
+										"type": "string"
+									}
+								},
+								"required": [],
+								"additionalProperties": false
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "number"
+												},
+												"title": {
+													"type": "string"
+												},
+												"completed": {
+													"type": "boolean"
+												},
+												"createdAt": {
+													"type": "string",
+													"description": "Date string"
+												},
+												"updatedAt": {
+													"type": "string",
+													"description": "Date string"
+												}
+											},
+											"required": [
+												"id",
+												"title",
+												"completed",
+												"createdAt",
+												"updatedAt"
+											],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/todos/create": {
+			"post": {
+				"operationId": "createTodo",
+				"summary": "createTodo",
+				"tags": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"title": {
+										"type": "string"
+									}
+								},
+								"required": ["title"],
+								"additionalProperties": false
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "number"
+												},
+												"title": {
+													"type": "string"
+												},
+												"completed": {
+													"type": "boolean"
+												},
+												"createdAt": {
+													"type": "string",
+													"description": "Date string"
+												},
+												"updatedAt": {
+													"type": "string",
+													"description": "Date string"
+												}
+											},
+											"required": [
+												"id",
+												"title",
+												"completed",
+												"createdAt",
+												"updatedAt"
+											],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/todos": {
+			"get": {
+				"operationId": "getTodos",
+				"summary": "getTodos",
+				"tags": [],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "number"
+													},
+													"title": {
+														"type": "string"
+													},
+													"completed": {
+														"type": "boolean"
+													},
+													"createdAt": {
+														"type": "string",
+														"description": "Date string"
+													},
+													"updatedAt": {
+														"type": "string",
+														"description": "Date string"
+													}
+												},
+												"required": [
+													"id",
+													"title",
+													"completed",
+													"createdAt",
+													"updatedAt"
+												],
+												"additionalProperties": false
+											}
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": ["requestId", "timestamp"],
+											"additionalProperties": false
+										}
+									},
+									"required": ["ok", "data", "meta"],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
