@@ -114,6 +114,52 @@ The frontend includes a custom file-based router. Create files inside `web/src/a
 
 ---
 
+## Authentication & Session Management
+
+StarterKit 007 includes a highly scalable, multi-session Google OAuth database authentication system.
+
+### 1. Database Schema (AuthJS Style)
+
+Authentication state is stored across three tables:
+- **`users`**: Main user profile fields.
+- **`accounts`**: Links users to one or more OAuth providers (enabling future provider integrations).
+- **`sessions`**: Tracks active session tokens in format `session_<random_hex>.<version>` (e.g. `v1`).
+  - **Temporary Sessions (`.tmp`)**: Supports single-use session tokens (e.g. `session_xxxx.tmp`) which are automatically and immediately deleted from the database on validation.
+
+### 2. Protecting API Endpoints
+
+To authenticate any RPC endpoint, simply import and call `requireAuth()` inside your API function:
+
+```typescript
+import { requireAuth } from "../../../core/auth/require-auth";
+
+export async function getProtectedData() {
+  const user = requireAuth(); // Throws 401 Unauthorized if not authenticated
+  return { secret: "data", email: user.email };
+}
+```
+
+The request context, authenticated user, and response headers are tracked using Bun's native `AsyncLocalStorage` during request lifecycles.
+
+### 3. Frontend Authentication Hook
+
+On the frontend, use the `useAuth()` hook to access profile state or trigger logout:
+
+```typescript
+import { useAuth } from "@/lib/auth-context";
+
+export default function MyComponent() {
+  const { user, isLoading, logout } = useAuth();
+  
+  if (isLoading) return <p>Loading...</p>;
+  if (!user) return <p>Please sign in</p>;
+  
+  return <button onClick={logout}>Sign Out</button>;
+}
+```
+
+---
+
 ## Advanced Usage (Escape Hatches)
 
 What if you need to build something that doesn't fit the RPC model, like **File Uploads**, **Stripe Webhooks**, or **WebSockets**?
