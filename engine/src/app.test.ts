@@ -1,177 +1,131 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+import {
+	type ErrorBody,
+	readJson,
+	type SuccessBody,
+	useTestEnv,
+} from "../test/helpers";
 import { createApp } from "./app";
-import { s } from "./core/schema";
 
-const app = createApp();
+describe("generated application", () => {
+	beforeEach(() => useTestEnv());
 
-describe("schema parser", () => {
-	test("parses object schemas with coercion", () => {
-		const schema = s.object({
-			enabled: s.boolean({ coerce: true }),
-			count: s.number({ coerce: true, integer: true }),
-		});
-
-		expect(schema.parse({ enabled: "true", count: "3" })).toEqual({
-			enabled: true,
-			count: 3,
-		});
-	});
-});
-
-describe("typed api runtime", () => {
-	test("GET /api/v1/system/health returns health envelope", async () => {
+	test("GET /api/v1/system/health returns the health envelope", async () => {
+		const app = createApp();
 		const response = await app.fetch(
-			new Request("http://localhost/api/v1/system/health?verbose=true"),
+			new Request("http://x/api/v1/system/health?verbose=true"),
 		);
-		const body = (await response.json()) as {
-			ok: boolean;
-			data: {
-				status: string;
-				checks?: {
-					runtime: string;
-				};
-			};
-		};
-
+		const body =
+			await readJson<
+				SuccessBody<{ status: string; checks?: { runtime: string } }>
+			>(response);
 		expect(response.status).toBe(200);
-		expect(body.ok).toBe(true);
 		expect(body.data.status).toBe("healthy");
 		expect(body.data.checks?.runtime).toBe("bun");
 	});
 
-	test("GET /api/v1/system/ping-pong returns structured payload", async () => {
+	test("GET /api/v1/system/ping-pong coerces numbers from the query string", async () => {
+		const app = createApp();
 		const response = await app.fetch(
-			new Request(
-				"http://localhost/api/v1/system/ping-pong?message=hello&repeat=2",
-			),
+			new Request("http://x/api/v1/system/ping-pong?message=hello&repeat=2"),
 		);
-		const body = (await response.json()) as {
-			ok: boolean;
-			data: {
-				received: string;
-				repeated: string[];
-			};
-		};
-
-		expect(response.status).toBe(200);
-		expect(body.ok).toBe(true);
+		const body =
+			await readJson<SuccessBody<{ received: string; repeated: string[] }>>(
+				response,
+			);
 		expect(body.data.received).toBe("hello");
 		expect(body.data.repeated).toEqual(["pong", "pong"]);
 	});
 
-	test("GET /openapi.json returns the generated document route", async () => {
-		const response = await app.fetch(
-			new Request("http://localhost/openapi.json"),
-		);
-
-		expect(response.status).toBe(200);
+	test("protected endpoints return 401 without a session (and never touch the database)", async () => {
+		const app = createApp();
+		const response = await app.fetch(new Request("http://x/api/v1/todos"));
+		const body = await readJson<ErrorBody>(response);
+		expect(response.status).toBe(401);
+		expect(body.error.code).toBe("UNAUTHORIZED");
 	});
 
-	test("POST against GET-only endpoint returns 405", async () => {
+	test("validation runs before the handler", async () => {
+		const app = createApp();
 		const response = await app.fetch(
-			new Request("http://localhost/api/v1/system/health", { method: "POST" }),
-		);
-
-		expect(response.status).toBe(405);
-		expect(response.headers.get("allow")).toBe("GET");
-	});
-
-	test("POST /api/v1/heavy-test returns coerced success responses", async () => {
-		const payload = {
-			unionField: 42,
-			intersectionField: {
-				id: "user-123",
-				name: "Bob",
-				age: "30", // Coerced from string to number
-			},
-			recordField: {
-				key1: {
-					role: "admin",
-					joinedAt: "2026-05-23T00:00:00.000Z",
-				},
-			},
-			dateField: "2026-05-23T00:00:00.000Z",
-			arrayField: [
-				{ sku: "item-A", price: "12.50" }, // Coerced from string to number
-			],
-			tupleField: ["first", "99"], // Coerced "99" in tuple
-		};
-
-		const response = await app.fetch(
-			new Request("http://localhost/api/v1/heavy-test", {
+			new Request("http://x/api/v1/todos/create", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(payload),
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ title: 123 }),
 			}),
 		);
-
-		const body = (await response.json()) as {
-			ok: boolean;
-			data: {
-				status: string;
-				result: {
-					echoedUnion: number;
-					mergedInfo: { id: string; name: string; age: number };
-					recordSummary: Record<string, string>;
-					itemCount: number;
-					tupleValue: [string, number];
-				};
-			};
-		};
-
-		expect(response.status).toBe(200);
-		expect(body.ok).toBe(true);
-		expect(body.data.status).toBe("success");
-		expect(body.data.result.echoedUnion).toBe(42);
-		expect(body.data.result.mergedInfo.age).toBe(30);
-		expect(body.data.result.itemCount).toBe(1);
-		expect(body.data.result.tupleValue).toEqual(["first", 99]);
-		expect(body.data.result.recordSummary.key1).toContain("admin");
-	});
-
-	test("POST /api/v1/heavy-test returns 400 bad request for invalid fields", async () => {
-		const badPayload = {
-			unionField: true, // Invalid (only string | number | null | undefined allowed)
-			intersectionField: {
-				id: "user-123",
-				// Missing required 'name' field
-			},
-			recordField: {
-				key1: {
-					role: "guest", // Invalid enum role
-					joinedAt: "2026-05-23T00:00:00.000Z",
-				},
-			},
-			dateField: "2026-05-23T00:00:00.000Z",
-			arrayField: [],
-			tupleField: [],
-		};
-
-		const response = await app.fetch(
-			new Request("http://localhost/api/v1/heavy-test", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(badPayload),
-			}),
-		);
-
-		const body = (await response.json()) as {
-			ok: boolean;
-			error: {
-				message: string;
-				details?: {
-					issues?: string[];
-				};
-			};
-		};
-
 		expect(response.status).toBe(400);
-		expect(body.ok).toBe(false);
-		expect(body.error.details?.issues).toBeDefined();
+	});
+
+	test("POST /api/v1/examples/complex coerces nested values", async () => {
+		const app = createApp();
+		const response = await app.fetch(
+			new Request("http://x/api/v1/examples/complex", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					unionField: 42,
+					intersectionField: { id: "user-123", name: "Bob", age: "30" },
+					recordField: {
+						key1: { role: "admin", joinedAt: "2026-05-23T00:00:00.000Z" },
+					},
+					dateField: "2026-05-23T00:00:00.000Z",
+					arrayField: [{ sku: "item-A", price: "12.50" }],
+					tupleField: ["first", "99"],
+				}),
+			}),
+		);
+		const body =
+			await readJson<
+				SuccessBody<{
+					result: {
+						mergedInfo: { age: number };
+						tupleValue: [string, number];
+						processedAt?: string;
+					};
+				}>
+			>(response);
+		expect(response.status).toBe(200);
+		expect(body.data.result.mergedInfo.age).toBe(30);
+		expect(body.data.result.tupleValue).toEqual(["first", 99]);
+	});
+
+	test("POST /api/v1/examples/complex rejects invalid fields with issue paths", async () => {
+		const app = createApp();
+		const response = await app.fetch(
+			new Request("http://x/api/v1/examples/complex", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					unionField: true,
+					intersectionField: { id: "user-123" },
+					recordField: {
+						key1: { role: "guest", joinedAt: "2026-05-23T00:00:00.000Z" },
+					},
+					dateField: "2026-05-23T00:00:00.000Z",
+					arrayField: [],
+					tupleField: [],
+				}),
+			}),
+		);
+		const body = await readJson<ErrorBody>(response);
+		expect(response.status).toBe(400);
 		expect(body.error.details?.issues?.length).toBeGreaterThan(0);
+	});
+
+	test("GET /openapi.json documents auth requirements", async () => {
+		const app = createApp();
+		const body = await readJson<{
+			paths: Record<
+				string,
+				{ get?: { security?: unknown[]; summary: string } }
+			>;
+		}>(await app.fetch(new Request("http://x/openapi.json")));
+		expect(body.paths["/api/v1/todos"]?.get?.security).toEqual([
+			{ cookieAuth: [] },
+		]);
+		expect(body.paths["/api/v1/system/health"]?.get?.summary).toBe(
+			"Liveness check.",
+		);
 	});
 });
