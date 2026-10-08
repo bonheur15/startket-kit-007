@@ -5,110 +5,190 @@ export type EndpointMeta = {
 	operationId: string;
 	method: string;
 	path: string;
+	inputSource?: "none" | "query" | "body";
+	auth?: boolean;
+};
+
+/** Wire format for inputs: query-string params for GET/DELETE, JSON body otherwise. */
+export type EndpointInput = {
+	query?: Record<string, unknown>;
+	body?: unknown;
+};
+
+export type RequestOptions = {
+	/** Ask the engine to log this call in detail (non-production only). */
+	debug?: boolean;
+	/** Abort signal (React Query passes one automatically). */
+	signal?: AbortSignal;
+	/** Fail the request after this many milliseconds. */
+	timeoutMs?: number;
+	/** Extra headers. */
+	headers?: Record<string, string>;
 };
 
 type SuccessEnvelope<TData> = {
 	ok: true;
 	data: TData;
-	meta: {
-		requestId: string;
-		timestamp: string;
-	};
+	meta: { requestId: string; timestamp: string };
 };
 
 type ErrorEnvelope = {
 	ok: false;
-	error: {
-		code: string;
-		message: string;
-		details?: unknown;
-	};
-	meta: {
-		requestId: string;
-		timestamp: string;
-	};
+	error: { code: string; message: string; details?: unknown };
+	meta: { requestId: string; timestamp: string };
 };
 
-function appendQuery(
-	url: URL,
-	query: Record<string, unknown> | undefined,
-): void {
-	if (!query) {
-		return;
-	}
+const BODY_METHODS = new Set(["POST", "PUT", "PATCH"]);
 
+function appendQuery(url: URL, query: Record<string, unknown> | undefined) {
+	if (!query) return;
 	for (const [key, value] of Object.entries(query)) {
-		if (value === undefined || value === null) {
-			continue;
-		}
-
+		if (value === undefined || value === null) continue;
 		if (Array.isArray(value)) {
-			for (const entry of value) {
-				url.searchParams.append(key, String(entry));
-			}
-			continue;
+			for (const entry of value) url.searchParams.append(key, serialize(entry));
+		} else {
+			url.searchParams.set(key, serialize(value));
 		}
-
-		url.searchParams.set(key, String(value));
 	}
+}
+
+function serialize(value: unknown): string {
+	if (value instanceof Date) return value.toISOString();
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+}
+
+/**
+ * Replace `:param` segments with values from the input and return the
+ * remaining input (path params are not sent twice).
+ */
+function applyPathParams(
+	path: string,
+	payload: Record<string, unknown> | undefined,
+): { path: string; rest: Record<string, unknown> | undefined } {
+	if (!payload || !path.includes(":")) return { path, rest: payload };
+	const rest = { ...payload };
+	const resolved = path.replace(/:([A-Za-z0-9_]+)/g, (_, key: string) => {
+		const value = rest[key];
+		if (value === undefined || value === null) {
+			throw new ApiClientError({
+				status: 0,
+				code: "MISSING_PATH_PARAM",
+				message: `Missing path parameter "${key}" for ${path}`,
+			});
+		}
+		delete rest[key];
+		return encodeURIComponent(serialize(value));
+	});
+	return { path: resolved, rest };
 }
 
 export function createRequestUrl(
 	path: string,
 	query?: Record<string, unknown>,
-) {
-	const url = new URL(path, API_BASE_URL);
+): URL {
+	const url = new URL(`${API_BASE_URL}${path}`);
 	appendQuery(url, query);
 	return url;
 }
 
-export async function apiRequest<TResponse, TInput = undefined>(
+async function parseEnvelope<TResponse>(
+	response: Response,
+): Promise<SuccessEnvelope<TResponse> | ErrorEnvelope | undefined> {
+	const contentType = response.headers.get("content-type") ?? "";
+	if (!contentType.includes("application/json")) return undefined;
+	try {
+		return (await response.json()) as
+			| SuccessEnvelope<TResponse>
+			| ErrorEnvelope;
+	} catch {
+		return undefined;
+	}
+}
+
+export async function apiRequest<TResponse>(
 	endpoint: EndpointMeta,
-	input?: TInput,
-	options?: { debug?: boolean },
+	input?: EndpointInput,
+	options: RequestOptions = {},
 ): Promise<TResponse> {
 	const method = endpoint.method.toUpperCase();
-	const isBodyMethod =
-		method === "POST" || method === "PUT" || method === "PATCH";
+	const isBodyMethod = BODY_METHODS.has(method);
 
-	const inputRecord = (input ?? {}) as Record<string, unknown>;
-	const queryPayload = inputRecord.query as Record<string, unknown> | undefined;
-	const bodyPayload = inputRecord.body;
-
-	const url = createRequestUrl(endpoint.path, queryPayload);
+	const payload = (isBodyMethod ? input?.body : input?.query) as
+		| Record<string, unknown>
+		| undefined;
+	const { path, rest } = applyPathParams(endpoint.path, payload);
+	const url = createRequestUrl(path, isBodyMethod ? undefined : rest);
 
 	const headers: Record<string, string> = {
-		...(isBodyMethod && bodyPayload !== undefined
+		accept: "application/json",
+		...(isBodyMethod && rest !== undefined
 			? { "content-type": "application/json" }
 			: {}),
-		...(options?.debug ? { "x-debug": "true" } : {}),
+		...(options.debug ? { "x-debug": "true" } : {}),
+		...options.headers,
 	};
 
-	const response = await fetch(url, {
-		method,
-		headers: Object.keys(headers).length > 0 ? headers : undefined,
-		body:
-			isBodyMethod && bodyPayload !== undefined
-				? JSON.stringify(bodyPayload)
-				: undefined,
-		credentials: "include",
-	});
+	const controller = options.timeoutMs ? new AbortController() : undefined;
+	const timeout = controller
+		? setTimeout(
+				() => controller.abort(new Error("Request timed out")),
+				options.timeoutMs,
+			)
+		: undefined;
+	if (controller && options.signal) {
+		options.signal.addEventListener(
+			"abort",
+			() => controller.abort(options.signal?.reason),
+			{
+				once: true,
+			},
+		);
+	}
 
-	const payload = (await response.json()) as
-		| SuccessEnvelope<TResponse>
-		| ErrorEnvelope;
+	let response: Response;
+	try {
+		response = await fetch(url, {
+			method,
+			headers,
+			body:
+				isBodyMethod && rest !== undefined ? JSON.stringify(rest) : undefined,
+			credentials: "include",
+			signal: controller?.signal ?? options.signal,
+		});
+	} catch (error) {
+		throw new ApiClientError({
+			status: 0,
+			code:
+				error instanceof Error && error.name === "AbortError"
+					? "ABORTED"
+					: "NETWORK_ERROR",
+			message:
+				error instanceof Error && error.message
+					? error.message
+					: "Could not reach the API. Check your connection and VITE_API_BASE_URL.",
+		});
+	} finally {
+		if (timeout) clearTimeout(timeout);
+	}
 
-	if (!response.ok || !payload.ok) {
-		const errorPayload = payload as ErrorEnvelope;
+	const envelope = await parseEnvelope<TResponse>(response);
 
+	if (!response.ok || !envelope?.ok) {
+		const failure = envelope && !envelope.ok ? envelope : undefined;
 		throw new ApiClientError({
 			status: response.status,
-			code: errorPayload.error?.code ?? "REQUEST_FAILED",
-			message: errorPayload.error?.message ?? "Request failed",
-			details: errorPayload.error?.details,
-			requestId: errorPayload.meta?.requestId,
+			code: failure?.error.code ?? "REQUEST_FAILED",
+			message:
+				failure?.error.message ??
+				`Request failed with status ${response.status}`,
+			details: failure?.error.details,
+			requestId:
+				failure?.meta.requestId ??
+				response.headers.get("x-request-id") ??
+				undefined,
 		});
 	}
 
-	return payload.data;
+	return envelope.data;
 }
