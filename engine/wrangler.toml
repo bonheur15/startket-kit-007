@@ -1,16 +1,26 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "starterkit-engine"
-main = "src/index.ts"
+main = "src/worker.ts"
 compatibility_date = "2026-06-03"
 compatibility_flags = ["nodejs_compat"]
 
+# Non-secret configuration. Secrets (DATABASE_URL, GOOGLE_CLIENT_SECRET, ...)
+# must be set with `wrangler secret put <NAME>` or via the deploy workflow.
 [vars]
 APP_NAME = "starterkit-engine"
 NODE_ENV = "production"
-PORT = "3000"
-CORS_ORIGIN = "*"
-DEBUG_API = "false"
-
+# Public URL of the deployed frontend. Used for OAuth redirects and CORS.
+WEB_URL = "https://starterkit-007.pages.dev"
+# Comma-separated list of origins allowed to call the API with credentials.
+CORS_ORIGINS = "https://starterkit-007.pages.dev"
+# Public URL of this worker. Used to build the OAuth callback URL.
+API_URL = "https://starterkit-engine.<your-subdomain>.workers.dev"
+# The web app and API live on different sites on *.pages.dev / *.workers.dev,
+# so the session cookie must be SameSite=None. Set to "lax" once both run under
+# one registrable domain (e.g. app.example.com + api.example.com).
+COOKIE_SAME_SITE = "none"
+LOG_LEVEL = "info"
+LOG_FORMAT = "json"
 
 [observability.logs]
 enabled = true
