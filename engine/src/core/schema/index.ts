@@ -125,6 +125,18 @@ function joinIssues(path: string, error: unknown): never {
 }
 
 export const s = {
+	/** Accepts `undefined` or `null`. Used for endpoints that return nothing. */
+	void() {
+		return createSchema<void>(
+			"void",
+			{ nullable: true, description: "No content" },
+			(input, path) => {
+				if (input === undefined || input === null) return undefined;
+				fail(path, "expected no value");
+			},
+		);
+	},
+
 	unknown(options: { description?: string } = {}) {
 		return createSchema<unknown>(
 			"unknown",
