@@ -5,7 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="StarterKit 007 — typed Bun engine + React web app" />
+    <meta name="theme-color" content="#0d110f" />
     <title>StarterKit 007</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      try {
+        const stored = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (stored ? stored === "dark" : prefersDark) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch {
+        // localStorage can be unavailable; default to light.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
