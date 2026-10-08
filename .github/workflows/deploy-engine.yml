@@ -1,44 +1,62 @@
-name: Deploy Engine to Cloudflare Workers
+name: Deploy Engine (Cloudflare Workers)
 
 on:
   workflow_dispatch:
-
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "engine/**"
-      - "Makefile"
-  pull_request:
-    paths:
-      - "engine/**"
-      - "Makefile"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/deploy-engine.yml"
+
+concurrency:
+  group: deploy-engine
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
       deployments: write
-
+    env:
+      HAS_DATABASE_URL: ${{ secrets.DATABASE_URL != '' }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Install Dependencies
-        run: make install
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - name: Generate API Endpoints
+      - name: Generate API artifacts
         run: make generate
+
+      - name: Run tests
+        run: cd engine && bun test
+
+      - name: Apply database migrations
+        if: env.HAS_DATABASE_URL == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: cd engine && bun run db:migrate
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: 'engine'
+          workingDirectory: engine
+          # Secrets are injected into the Worker at deploy time. Add more as needed.
+          secrets: |
+            DATABASE_URL
+            GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_SECRET
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
