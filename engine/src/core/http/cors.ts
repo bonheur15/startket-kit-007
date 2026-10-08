@@ -36,7 +36,8 @@ export function resolveAllowedOrigin(
 	for (const { pattern } of compileOrigins()) {
 		if (pattern.test(requestOrigin)) return requestOrigin;
 	}
-	if (!env.isProduction && isLoopbackOrigin(requestOrigin)) return requestOrigin;
+	if (!env.isProduction && isLoopbackOrigin(requestOrigin))
+		return requestOrigin;
 	return null;
 }
 
