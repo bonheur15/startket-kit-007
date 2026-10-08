@@ -1,19 +1,25 @@
 import { getLoginUrl } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 export function GoogleSignInButton({
 	redirectTo = "/dashboard",
 	label = "Continue with Google",
+	className,
 }: {
 	redirectTo?: string;
 	label?: string;
+	className?: string;
 }) {
 	return (
 		<a
 			href={getLoginUrl(redirectTo)}
-			className="inline-flex w-fit items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3.5 font-semibold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-400 hover:bg-slate-50 hover:shadow"
+			className={cn(
+				"inline-flex h-12 items-center justify-center gap-3 rounded-2xl border border-line-strong bg-surface px-6 text-sm font-semibold text-fg shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/40",
+				className,
+			)}
 		>
 			<svg
-				className="mr-3 h-5 w-5"
+				className="size-5"
 				viewBox="0 0 24 24"
 				fill="currentColor"
 				role="img"
