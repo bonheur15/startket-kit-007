@@ -1,5 +1,6 @@
-import { AlertTriangle } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
+import { Button } from "@/components/ui/button";
 import { isApiClientError } from "@/lib/engine";
 
 /**
@@ -27,29 +28,24 @@ export function RouteErrorBoundary() {
 	if (import.meta.env.DEV) console.error(error);
 
 	return (
-		<section className="mx-auto max-w-xl rounded-3xl border border-rose-100 bg-rose-50/60 p-8 text-center">
-			<AlertTriangle className="mx-auto h-8 w-8 text-rose-500" aria-hidden />
-			<h1 className="mt-4 text-2xl font-extrabold text-slate-900">{title}</h1>
-			<p className="mt-2 text-sm text-slate-600">{detail}</p>
+		<section className="bg-grid mx-auto max-w-lg rounded-3xl border border-line bg-surface/80 p-10 text-center shadow-md">
+			<div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-danger-soft text-danger">
+				<TriangleAlert className="size-6" aria-hidden />
+			</div>
+			<h1 className="mt-5 text-2xl font-semibold tracking-tight text-fg">
+				{title}
+			</h1>
+			<p className="mt-2 text-sm text-fg-muted">{detail}</p>
 			{requestId && (
-				<p className="mt-2 font-mono text-xs text-slate-400">
-					request id: {requestId}
+				<p className="mt-3 font-mono text-[11px] text-fg-subtle">
+					request id · {requestId}
 				</p>
 			)}
-			<div className="mt-6 flex justify-center gap-3">
-				<button
-					type="button"
-					onClick={() => window.location.reload()}
-					className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-				>
-					Reload
-				</button>
-				<Link
-					to="/"
-					className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-				>
-					Go home
-				</Link>
+			<div className="mt-7 flex justify-center gap-3">
+				<Button onClick={() => window.location.reload()}>Reload</Button>
+				<Button asChild variant="outline">
+					<Link to="/">Go home</Link>
+				</Button>
 			</div>
 		</section>
 	);
