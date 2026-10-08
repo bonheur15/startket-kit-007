@@ -1,40 +1,21 @@
 # Web
 
-Frontend application for Starterkit 007.
-
-Main docs:
-
-- [Root README](../README.md)
-- [Architecture](../docs/ARCHITECTURE.md)
-- [Hosting](../docs/HOSTING.md)
-
-## Purpose
-
-`web/` is a Vite + React app that consumes the backend through the generated engine client.
-
-Use:
-
-```ts
-import { useEngine, callEngine } from "@/lib/engine";
-```
-
-Examples:
-
-```ts
-const health = useEngine("/system/health", { verbose: true });
-const ping = useEngine("/ping-pong", { message: "hello", repeat: 2 });
-```
-
-## Environment
-
-```env
-VITE_API_BASE_URL=http://127.0.0.1:3000
-```
-
-## Commands
+React 19 + Vite + Tailwind 4 + React Query. Consumes the engine through the generated client.
 
 ```bash
-bun run dev
+bun run dev         # http://localhost:5173
 bun run typecheck
-bun run build
+bun run build       # → dist/
 ```
+
+Set `VITE_API_BASE_URL` in `.env` (defaults to `http://localhost:3000`).
+
+Start here:
+
+- `src/app/` — file-based routes ([root README → Routing](../README.md#routing-in-the-web-app))
+- `src/lib/engine/` — `useEngine`, `useEngineMutation`, `callEngine` ([root README → Calling the API](../README.md#calling-the-api-from-the-web-app))
+- `src/lib/auth/` — `useAuth()`, `<AuthProvider>`, `getLoginUrl()`
+- `src/components/require-auth.tsx` — guard for protected routes
+- `src/components/error-boundary.tsx` — route error UI
+
+React Query Devtools are mounted in development (bottom-left).
