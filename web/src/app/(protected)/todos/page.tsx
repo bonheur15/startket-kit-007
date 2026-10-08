@@ -1,23 +1,35 @@
+import { PageHeader } from "@/components/page-header";
 import { TodoApp } from "@/components/todo-app";
-import { useAuth } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
+
+const ENDPOINTS = [
+	{ method: "GET", path: "/todos", variant: "accent" },
+	{ method: "POST", path: "/todos/create", variant: "info" },
+	{ method: "PUT", path: "/todos/:id/update", variant: "info" },
+	{ method: "DELETE", path: "/todos/:id/delete", variant: "danger" },
+] as const;
 
 export default function TodosPage() {
-	const { user } = useAuth();
-
 	return (
-		<div className="flex flex-col items-center p-4">
-			<div className="w-full max-w-4xl">
-				<div className="mb-10 text-center">
-					<h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-						Manage your <span className="text-amber-600">tasks</span>
-					</h1>
-					<p className="mx-auto max-w-2xl text-lg text-slate-500">
-						Mutations with optimistic updates, scoped to{" "}
-						<b>{user?.name ?? user?.email}</b>.
-					</p>
-				</div>
-				<TodoApp />
+		<div className="mx-auto max-w-3xl">
+			<PageHeader
+				eyebrow="Demo"
+				title="Todos"
+				description="A full read/write loop through generated endpoints with optimistic updates and cache invalidation. Double-click a task to rename it."
+				className="mb-5"
+			/>
+			<div className="mb-6 flex flex-wrap items-center gap-2">
+				<span className="font-mono text-[11px] uppercase tracking-widest text-fg-subtle">
+					endpoints
+				</span>
+				{ENDPOINTS.map((endpoint) => (
+					<Badge key={endpoint.path} variant={endpoint.variant} className="normal-case tracking-normal">
+						<span className="font-bold">{endpoint.method}</span>
+						<span className="font-mono font-medium">{endpoint.path}</span>
+					</Badge>
+				))}
 			</div>
+			<TodoApp />
 		</div>
 	);
 }
