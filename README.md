@@ -209,6 +209,12 @@ See `engine/.env.example` and `web/.env.example`; every variable is validated at
 
 See [docs/HOSTING.md](docs/HOSTING.md). In short: `make worker-build` proves the Workers bundle compiles, `.github/workflows/ci.yml` runs `make verify` on every PR, and the deploy workflows ship the engine (Workers) and web (Pages) from `main`.
 
+## Troubleshooting
+
+- **CORS error in the browser.** The engine only echoes origins it trusts. Outside production every loopback origin (`localhost`, `127.0.0.1`, any port) is accepted automatically; anything else must be listed in `CORS_ORIGINS`. Restart the engine after changing `engine/.env`.
+- **Signed in, but `/auth/me` returns 401.** The session cookie is scoped to the engine's host. Open the web app and the engine on the same host (both `localhost` or both `127.0.0.1`); the web client defaults to port 3000 on the page's own host for exactly this reason. Across real domains, see the cookie table in `docs/HOSTING.md`.
+- **`make generate` fails.** The message names the file and rule (one exported function, recognised name prefix, no `any`). Fix the endpoint and the watcher regenerates.
+
 ## Conventions
 
 - Keep endpoint-specific logic next to the endpoint. Share code through `engine/src/core` only when two endpoints need it.
