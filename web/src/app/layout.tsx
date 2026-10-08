@@ -1,132 +1,221 @@
 import {
-	CheckSquare,
-	Info,
+	BookOpen,
+	FileJson,
 	LayoutDashboard,
+	ListTodo,
 	LogOut,
-	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { Brand } from "@/components/brand";
 import { RouteErrorBoundary } from "@/components/error-boundary";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api/config";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 export { RouteErrorBoundary as ErrorBoundary };
 
-function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
+const publicLinks = [
+	{ to: "/about", label: "How it works" },
+	{ to: "/health", label: "Status" },
+];
+
+function NavItem({
+	to,
+	children,
+	icon,
+}: {
+	to: string;
+	children: React.ReactNode;
+	icon?: React.ReactNode;
+}) {
 	return (
 		<NavLink
 			to={to}
 			className={({ isActive }) =>
 				cn(
-					"flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+					"inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors",
 					isActive
-						? "bg-slate-900 text-white"
-						: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+						? "bg-ink-3 text-ink-fg"
+						: "text-ink-muted hover:bg-ink-3/60 hover:text-ink-fg",
 				)
 			}
 		>
-			{children}
+			{icon}
+			<span className={icon ? "hidden sm:inline" : undefined}>{children}</span>
 		</NavLink>
 	);
 }
 
-function Header() {
+function UserMenu() {
 	const { user, isLoading, logout } = useAuth();
 	const location = useLocation();
 
-	return (
-		<header className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-slate-100 bg-white/80 px-6 py-3 shadow-sm backdrop-blur-xl">
-			<Link
-				to="/"
-				className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-slate-900"
-			>
-				<Sparkles className="h-5 w-5 text-amber-500" aria-hidden />
-				<span>StarterKit 007</span>
-			</Link>
+	if (isLoading)
+		return <div className="h-8 w-24 animate-pulse rounded-lg bg-ink-3" />;
 
-			<nav className="flex items-center gap-1" aria-label="Primary">
-				<NavItem to="/about">
-					<Info className="h-4 w-4" aria-hidden />
-					<span className="hidden sm:inline">About</span>
-				</NavItem>
-				<NavItem to="/health">
-					<ShieldCheck className="h-4 w-4" aria-hidden />
-					<span className="hidden sm:inline">Health</span>
-				</NavItem>
+	if (!user) {
+		return (
+			<Button asChild variant="accent" size="sm">
+				<Link to={`/login?redirect=${encodeURIComponent(location.pathname)}`}>
+					Sign in
+				</Link>
+			</Button>
+		);
+	}
+
+	return (
+		<div className="flex items-center gap-2">
+			<Link
+				to="/dashboard"
+				className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-ink-3/60"
+			>
+				{user.picture ? (
+					<img
+						src={user.picture}
+						alt=""
+						className="size-7 rounded-md object-cover ring-1 ring-ink-line"
+						referrerPolicy="no-referrer"
+					/>
+				) : (
+					<span className="flex size-7 items-center justify-center rounded-md bg-accent font-mono text-xs font-bold text-accent-fg">
+						{(user.name ?? user.email).charAt(0).toUpperCase()}
+					</span>
+				)}
+				<span className="hidden text-[13px] font-medium text-ink-fg lg:inline">
+					{user.name ?? user.email}
+				</span>
+			</Link>
+			<button
+				type="button"
+				onClick={() => void logout()}
+				className="inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-danger/15 hover:text-danger"
+				title="Sign out"
+			>
+				<LogOut className="size-4" aria-hidden />
+				<span className="sr-only">Sign out</span>
+			</button>
+		</div>
+	);
+}
+
+function Header() {
+	const { user } = useAuth();
+
+	return (
+		<header className="sticky top-0 z-50 border-b border-ink-line bg-ink/90 text-ink-fg backdrop-blur-xl">
+			<div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+				<div className="flex items-center gap-6">
+					<Brand inverted />
+					<nav
+						className="hidden items-center gap-0.5 md:flex"
+						aria-label="Primary"
+					>
+						{publicLinks.map((link) => (
+							<NavItem key={link.to} to={link.to}>
+								{link.label}
+							</NavItem>
+						))}
+						{user && (
+							<>
+								<span className="mx-1 h-4 w-px bg-ink-line" />
+								<NavItem
+									to="/todos"
+									icon={<ListTodo className="size-3.5" aria-hidden />}
+								>
+									Todos
+								</NavItem>
+								<NavItem
+									to="/dashboard"
+									icon={<LayoutDashboard className="size-3.5" aria-hidden />}
+								>
+									Dashboard
+								</NavItem>
+							</>
+						)}
+					</nav>
+				</div>
+
+				<div className="flex items-center gap-2">
+					<a
+						href={`${API_BASE_URL}/openapi.json`}
+						target="_blank"
+						rel="noreferrer"
+						className="hidden h-8 items-center gap-1.5 rounded-lg px-2.5 font-mono text-xs text-ink-muted transition-colors hover:bg-ink-3/60 hover:text-ink-fg sm:inline-flex"
+					>
+						<FileJson className="size-3.5" aria-hidden />
+						openapi.json
+					</a>
+					<ThemeToggle />
+					<UserMenu />
+				</div>
+			</div>
+
+			{/* Mobile nav */}
+			<nav
+				className="flex gap-1 overflow-x-auto border-t border-ink-line px-3 py-2 md:hidden"
+				aria-label="Mobile"
+			>
+				{publicLinks.map((link) => (
+					<NavItem key={link.to} to={link.to}>
+						{link.label}
+					</NavItem>
+				))}
 				{user && (
 					<>
-						<NavItem to="/todos">
-							<CheckSquare className="h-4 w-4" aria-hidden />
-							<span>Todos</span>
-						</NavItem>
-						<NavItem to="/dashboard">
-							<LayoutDashboard className="h-4 w-4" aria-hidden />
-							<span>Dashboard</span>
-						</NavItem>
+						<NavItem to="/todos">Todos</NavItem>
+						<NavItem to="/dashboard">Dashboard</NavItem>
 					</>
 				)}
-				<a
-					href={`${API_BASE_URL}/openapi.json`}
-					target="_blank"
-					rel="noreferrer"
-					className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 md:flex"
-				>
-					OpenAPI
-				</a>
 			</nav>
-
-			<div className="flex items-center gap-3 border-l border-slate-200 pl-3">
-				{isLoading ? (
-					<div className="h-8 w-20 animate-pulse rounded-full bg-slate-100" />
-				) : user ? (
-					<>
-						{user.picture && (
-							<img
-								src={user.picture}
-								alt=""
-								className="h-8 w-8 rounded-full object-cover ring-2 ring-slate-100"
-								referrerPolicy="no-referrer"
-							/>
-						)}
-						<div className="hidden flex-col text-left lg:flex">
-							<span className="text-sm font-semibold leading-tight text-slate-700">
-								{user.name}
-							</span>
-							<span className="text-xs text-slate-400">{user.email}</span>
-						</div>
-						<button
-							type="button"
-							onClick={() => void logout()}
-							className="rounded-xl p-2 text-slate-400 transition-all hover:bg-rose-50 hover:text-rose-600"
-							title="Sign out"
-						>
-							<LogOut className="h-4 w-4" aria-hidden />
-							<span className="sr-only">Sign out</span>
-						</button>
-					</>
-				) : (
-					<Link
-						to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
-						className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-slate-800"
-					>
-						Sign in
-					</Link>
-				)}
-			</div>
 		</header>
+	);
+}
+
+function Footer() {
+	return (
+		<footer className="border-t border-line">
+			<div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+				<p className="font-mono text-xs">
+					StarterKit 007 · Bun · React · Drizzle ·{" "}
+					<span className="text-fg-subtle">function-first RPC</span>
+				</p>
+				<div className="flex items-center gap-5 text-xs">
+					<Link
+						to="/about"
+						className="inline-flex items-center gap-1.5 hover:text-fg"
+					>
+						<BookOpen className="size-3.5" aria-hidden />
+						Docs
+					</Link>
+					<a
+						href={`${API_BASE_URL}/openapi.json`}
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex items-center gap-1.5 hover:text-fg"
+					>
+						<FileJson className="size-3.5" aria-hidden />
+						OpenAPI
+					</a>
+					<Link to="/health" className="hover:text-fg">
+						Status
+					</Link>
+				</div>
+			</div>
+		</footer>
 	);
 }
 
 export default function RootLayout() {
 	return (
 		<AuthProvider>
-			<div className="flex min-h-screen flex-col bg-slate-50/50">
+			<div className="flex min-h-screen flex-col">
 				<Header />
-				<main className="mx-auto w-full max-w-7xl flex-grow px-4 py-8 sm:px-6 lg:px-8">
+				<main className="mx-auto w-full max-w-7xl flex-grow px-4 py-10 sm:px-6">
 					<Outlet />
 				</main>
+				<Footer />
 			</div>
 		</AuthProvider>
 	);
