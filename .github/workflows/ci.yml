@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, test, typecheck, build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Biome (lint + format)
+        run: make check
+
+      - name: Generate API artifacts
+        run: make generate
+
+      - name: Tests
+        run: cd engine && bun test
+
+      - name: Typecheck
+        run: |
+          cd engine && bun run typecheck
+          cd ../web && bun run typecheck
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: https://api.example.com
+        run: |
+          cd engine && bun run build && bun run worker:build
+          cd ../web && bun run build
