@@ -1,75 +1,84 @@
 # Architecture
 
-## Overview
+## Request lifecycle (engine)
 
-This project uses a function-first generated API system.
+```
+Request
+  │  resolve request id (client-provided only if well-formed)
+  │  build RequestContext { request, url, requestId, logger, responseHeaders, user() }
+  ▼
+rawFetch()  ──► Response?   (last-resort escape hatch)
+  ▼
+rawRoutes   ──► exact / :param match → handler(context, params)
+  ▼
+OPTIONS → 204 + CORS      "/" → service info      "/openapi.json" → document
+  ▼
+RPC routes  (generated manifest)
+  │  match path (trailing slash tolerated) → 404
+  │  match method (HEAD ⇒ GET)             → 405 + Allow
+  │  read input: path params + query | JSON body (type, size, parse checks)
+  │  inputSchema.parse()                   → 400 { issues }
+  │  handler(input)                        (ApiError → its status; other → 500, logged)
+  │  responseSchema.parse()                → 500 (configurable)
+  ▼
+Envelope { ok, data | error, meta: { requestId, timestamp } }
+  + CORS (allow-list), security headers, Set-Cookie from context.responseHeaders
+  + one structured log line per request
+```
 
-Source of truth:
+The context is stored in `AsyncLocalStorage`, so `requireAuth()`, `getUser()` and `getRequestContext()` work anywhere in the call stack without passing a request object around. The user is resolved **lazily** on first use and memoised for the request.
 
-- exported endpoint functions in `engine/src/api`
+## Generator
 
-Generated outputs:
+`engine/scripts/generate.ts` loads `engine/tsconfig.json`, creates a TypeScript program over `src/api/**/index.ts` and, for each file:
 
-- backend runtime manifest
-- backend OpenAPI document
-- frontend typed API client
-- frontend typed query hooks
-- frontend route alias registry
+1. Finds the single exported function (type exports are allowed; anything else is an error).
+2. Infers method (name prefix), path (folder), path params (`[name]` folders), and whether the input is optional.
+3. Converts the input and return types into an intermediate representation, which is then printed twice:
+   - as runtime schema expressions (`s.object({...})`) for validation and OpenAPI,
+   - as TypeScript type text for the web client (`Date` → `string` in responses).
+4. Reads the JSDoc comment (`summary`, description, `@tag`, `@deprecated`) and detects `requireAuth(` for OpenAPI security.
+5. Rejects duplicates (method + path, function names), recursive types, `any`/`unknown`, functions, and unknown method prefixes.
 
-## Backend Flow
+Outputs are only rewritten when their content changes, so the watcher does not trigger needless reloads.
 
-1. Define an endpoint function in `engine/src/api/.../index.ts`
-2. Run `make generate`
-3. `engine/scripts/generate.ts` uses the TypeScript compiler API to infer:
-   - method
-   - path
-   - input type
-   - output type
-4. Generated runtime artifacts are written into `engine/src/generated`
-5. `engine/src/core/api/runtime.ts` serves the request using the generated manifest
+### Supported types
 
-## Frontend Flow
+Primitives, literals, string-literal unions (enums), `Date`, arrays, tuples, `Record<string, T>`, nested objects, intersections, `| null`, `| undefined` / optional properties, `void` returns.
 
-1. The same generator writes typed frontend artifacts into `web/src/generated`
-2. `web/src/lib/engine/index.ts` provides the stable app-facing import surface
-3. Components call:
-   - `useEngine(path, input)`
-   - `callEngine(path, input)`
-4. `web/src/lib/api/hooks.ts` handles caching and fetch lifecycle
+## Web client
 
-## Runtime Validation
+```
+web/.generated/api-client.ts   per-operation functions + Meta objects (method, path, inputSource)
+web/.generated/api-hooks.ts    per-operation React Query hooks
+web/.generated/engine.ts       path-based API: useEngine / useEngineMutation / callEngine / invalidateEngine
+web/src/lib/api/client.ts      fetch wrapper: path params, query/body encoding, envelopes, timeouts, errors
+web/src/lib/api/hooks.ts       thin adapters over @tanstack/react-query
+web/src/lib/api/query-client   shared QueryClient (retry policy, stale times)
+```
 
-The generator converts inferred TypeScript shapes into internal runtime schemas.
+Query keys are `["engine", <canonical path>, <input | null>]`, so every alias of an endpoint shares one cache entry and `invalidateEngine(path)` invalidates all inputs of that endpoint.
 
-This means:
+## Alias strategy
 
-- no manual contract file for common cases
-- runtime input parsing on the backend
-- runtime response shape validation
-- generated OpenAPI from the same inferred shapes
+Backend paths are explicit and versioned (`/api/v1/system/health`). The web client additionally accepts `/v1/system/health`, `/system/health` and, for `system/*`, `/health`. All aliases resolve to the same metadata object.
 
-The generator supports parsing highly complex TypeScript types into strict runtime schemas, including:
+## Database
 
-- **Primitives:** `string`, `number`, `boolean`, `any`
-- **Objects & Arrays:** Recursive interfaces, nested arrays, `Record<string, T>`
-- **Advanced Types:** Unions (`|`), Intersections (`&`), Tuples (`[A, B]`), and literal types
-- **Special Types:** `Date`
+`engine/src/db/index.ts` exports a lazy `db` handle. The driver is chosen from `DATABASE_URL`:
 
-### Error Handling
+- host ends in `.neon.tech` (or `DATABASE_DRIVER=neon`) → `@neondatabase/serverless` over HTTP (required on Workers)
+- otherwise → `postgres.js` over TCP
 
-Validation is strict at runtime:
+No connection is opened until the first query, so codegen, tests and the Workers bundle do not need a database.
 
-- **Input Validation (400 Bad Request):** If the client sends a `query` or `body` payload that doesn't match the required schema, the runtime intercepts it before it reaches your function and returns a detailed `SchemaError` describing the mismatch.
-- **Output Validation (500 Internal Server Error):** If your endpoint function accidentally returns data that doesn't match its declared return type, the runtime catches the discrepancy and returns a 500 error to ensure frontend contracts are never violated.
+## Sessions
 
-## Alias Strategy
+- Token: `session_<64 hex>`; only its SHA-256 hash is stored.
+- TTL from `SESSION_TTL_DAYS`; extended when less than half the TTL remains.
+- Cookie attributes (`SameSite`, `Secure`, `Domain`) come from the environment so the same code works for same-site and cross-site deployments.
+- Expired sessions are deleted on access; the Worker `scheduled` handler (and `cleanExpiredSessions()`) sweeps the rest.
 
-Backend remains explicit and versioned:
+## Testing
 
-- `/api/v1/system/health`
-
-Frontend can use shorter typed aliases:
-
-- `/v1/system/health`
-- `/system/health`
-- `/health`
+`engine/test/helpers.ts` installs a deterministic environment. Runtime, CORS, schema, env and OAuth behaviour are tested without a database; `app.test.ts` exercises the generated manifest. Add endpoint tests next to the endpoint (`index.test.ts`) and use `useTestEnv()`.
