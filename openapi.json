@@ -3,19 +3,36 @@
 	"info": {
 		"title": "starterkit-engine API",
 		"version": "v1",
-		"description": "Generated OpenAPI document from inferred TypeScript endpoint types."
+		"description": "Generated from the TypeScript signatures of the endpoint functions in engine/src/api."
 	},
 	"servers": [
 		{
-			"url": "http://0.0.0.0:3000"
+			"url": "http://localhost:3000"
+		}
+	],
+	"tags": [
+		{
+			"name": "auth"
+		},
+		{
+			"name": "examples"
+		},
+		{
+			"name": "system"
+		},
+		{
+			"name": "todos"
 		}
 	],
 	"paths": {
 		"/api/v1/auth/logout": {
 			"post": {
 				"operationId": "createAuthLogout",
-				"summary": "createAuthLogout",
-				"tags": [],
+				"summary": "Sign out of the current session.",
+				"description": "Revokes the session server-side and clears the cookie. Always succeeds.",
+				"tags": [
+					"auth"
+				],
 				"responses": {
 					"200": {
 						"description": "Successful response",
@@ -35,7 +52,9 @@
 													"type": "boolean"
 												}
 											},
-											"required": ["success"],
+											"required": [
+												"success"
+											],
 											"additionalProperties": false
 										},
 										"meta": {
@@ -48,12 +67,29 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -64,8 +100,15 @@
 		"/api/v1/auth/me": {
 			"get": {
 				"operationId": "getAuthMe",
-				"summary": "getAuthMe",
-				"tags": [],
+				"summary": "Profile of the signed-in user.",
+				"tags": [
+					"auth"
+				],
+				"security": [
+					{
+						"cookieAuth": []
+					}
+				],
 				"responses": {
 					"200": {
 						"description": "Successful response",
@@ -94,9 +137,19 @@
 												"picture": {
 													"type": "string",
 													"nullable": true
+												},
+												"createdAt": {
+													"type": "string",
+													"description": "Date string"
 												}
 											},
-											"required": ["id", "email", "name", "picture"],
+											"required": [
+												"id",
+												"email",
+												"name",
+												"picture",
+												"createdAt"
+											],
 											"additionalProperties": false
 										},
 										"meta": {
@@ -109,12 +162,39 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -122,11 +202,14 @@
 				}
 			}
 		},
-		"/api/v1/heavy-test": {
+		"/api/v1/examples/complex": {
 			"post": {
-				"operationId": "postHeavyTestComplex",
-				"summary": "postHeavyTestComplex",
-				"tags": [],
+				"operationId": "postExampleComplex",
+				"summary": "Echo a complex payload back.",
+				"description": "Demonstrates unions, intersections, records, dates, arrays and tuples.",
+				"tags": [
+					"examples"
+				],
 				"requestBody": {
 					"required": true,
 					"content": {
@@ -158,7 +241,10 @@
 												"type": "number"
 											}
 										},
-										"required": ["id", "name"],
+										"required": [
+											"id",
+											"name"
+										],
 										"additionalProperties": false
 									},
 									"recordField": {
@@ -168,14 +254,20 @@
 											"properties": {
 												"role": {
 													"type": "string",
-													"enum": ["admin", "user"]
+													"enum": [
+														"admin",
+														"user"
+													]
 												},
 												"joinedAt": {
 													"type": "string",
 													"description": "Date string"
 												}
 											},
-											"required": ["role", "joinedAt"],
+											"required": [
+												"role",
+												"joinedAt"
+											],
 											"additionalProperties": false
 										}
 									},
@@ -195,7 +287,10 @@
 													"type": "number"
 												}
 											},
-											"required": ["sku", "price"],
+											"required": [
+												"sku",
+												"price"
+											],
 											"additionalProperties": false
 										}
 									},
@@ -242,7 +337,10 @@
 											"properties": {
 												"status": {
 													"type": "string",
-													"enum": ["success", "error"]
+													"enum": [
+														"success",
+														"error"
+													]
 												},
 												"processedAt": {
 													"type": "string",
@@ -275,7 +373,10 @@
 																	"type": "number"
 																}
 															},
-															"required": ["id", "name"],
+															"required": [
+																"id",
+																"name"
+															],
 															"additionalProperties": false
 														},
 														"recordSummary": {
@@ -311,7 +412,11 @@
 													"additionalProperties": false
 												}
 											},
-											"required": ["status", "processedAt", "result"],
+											"required": [
+												"status",
+												"processedAt",
+												"result"
+											],
 											"additionalProperties": false
 										},
 										"meta": {
@@ -324,12 +429,134 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/examples/simple": {
+			"get": {
+				"operationId": "getExampleSimple",
+				"summary": "Minimal GET endpoint with an optional boolean query flag.",
+				"tags": [
+					"examples"
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "flag",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										},
+										"data": {
+											"type": "object",
+											"properties": {
+												"active": {
+													"type": "boolean"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"active",
+												"timestamp"
+											],
+											"additionalProperties": false
+										},
+										"meta": {
+											"type": "object",
+											"properties": {
+												"requestId": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"requestId",
+												"timestamp"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -340,8 +567,11 @@
 		"/api/v1/system/health": {
 			"get": {
 				"operationId": "getSystemHealth",
-				"summary": "getSystemHealth",
-				"tags": [],
+				"summary": "Liveness check.",
+				"description": "Pass `verbose=true` to include runtime details.",
+				"tags": [
+					"system"
+				],
 				"parameters": [
 					{
 						"in": "query",
@@ -371,13 +601,14 @@
 													"type": "string"
 												},
 												"environment": {
-													"type": "string"
+													"type": "string",
+													"enum": [
+														"development",
+														"test",
+														"production"
+													]
 												},
 												"version": {
-													"const": "v1",
-													"type": "string"
-												},
-												"testingenv": {
 													"type": "string"
 												},
 												"status": {
@@ -395,13 +626,19 @@
 													"properties": {
 														"runtime": {
 															"type": "string",
-															"enum": ["bun", "cloudflare-workers"]
+															"enum": [
+																"bun",
+																"cloudflare-workers"
+															]
 														},
 														"docs": {
 															"type": "string"
 														}
 													},
-													"required": ["runtime", "docs"],
+													"required": [
+														"runtime",
+														"docs"
+													],
 													"additionalProperties": false
 												}
 											},
@@ -409,7 +646,6 @@
 												"service",
 												"environment",
 												"version",
-												"testingenv",
 												"status",
 												"uptimeMs",
 												"timestamp"
@@ -426,12 +662,39 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -442,8 +705,10 @@
 		"/api/v1/system/ping-pong": {
 			"get": {
 				"operationId": "getPingPong",
-				"summary": "getPingPong",
-				"tags": [],
+				"summary": "Echo endpoint used by the home page to demonstrate typed GET queries.",
+				"tags": [
+					"system"
+				],
 				"parameters": [
 					{
 						"in": "query",
@@ -515,12 +780,39 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -528,18 +820,25 @@
 				}
 			}
 		},
-		"/api/v1/todos/:id/delete": {
+		"/api/v1/todos/{id}/delete": {
 			"delete": {
 				"operationId": "deleteTodo",
-				"summary": "deleteTodo",
-				"tags": [],
+				"summary": "Delete one of the signed-in user's todos.",
+				"tags": [
+					"todos"
+				],
+				"security": [
+					{
+						"cookieAuth": []
+					}
+				],
 				"parameters": [
 					{
 						"in": "path",
 						"name": "id",
 						"required": true,
 						"schema": {
-							"type": "string"
+							"type": "number"
 						}
 					}
 				],
@@ -562,7 +861,9 @@
 													"type": "boolean"
 												}
 											},
-											"required": ["success"],
+											"required": [
+												"success"
+											],
 											"additionalProperties": false
 										},
 										"meta": {
@@ -575,12 +876,49 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -588,18 +926,25 @@
 				}
 			}
 		},
-		"/api/v1/todos/:id/update": {
+		"/api/v1/todos/{id}/update": {
 			"put": {
 				"operationId": "updateTodo",
-				"summary": "updateTodo",
-				"tags": [],
+				"summary": "Update the title and/or completion state of one of the signed-in user's todos.",
+				"tags": [
+					"todos"
+				],
+				"security": [
+					{
+						"cookieAuth": []
+					}
+				],
 				"parameters": [
 					{
 						"in": "path",
 						"name": "id",
 						"required": true,
 						"schema": {
-							"type": "string"
+							"type": "number"
 						}
 					}
 				],
@@ -610,11 +955,11 @@
 							"schema": {
 								"type": "object",
 								"properties": {
-									"completed": {
-										"type": "boolean"
-									},
 									"title": {
 										"type": "string"
+									},
+									"completed": {
+										"type": "boolean"
 									}
 								},
 								"required": [],
@@ -675,12 +1020,49 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -691,8 +1073,15 @@
 		"/api/v1/todos/create": {
 			"post": {
 				"operationId": "createTodo",
-				"summary": "createTodo",
-				"tags": [],
+				"summary": "Create a todo for the signed-in user.",
+				"tags": [
+					"todos"
+				],
+				"security": [
+					{
+						"cookieAuth": []
+					}
+				],
 				"requestBody": {
 					"required": true,
 					"content": {
@@ -704,7 +1093,9 @@
 										"type": "string"
 									}
 								},
-								"required": ["title"],
+								"required": [
+									"title"
+								],
 								"additionalProperties": false
 							}
 						}
@@ -762,12 +1153,49 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
@@ -778,8 +1206,15 @@
 		"/api/v1/todos": {
 			"get": {
 				"operationId": "getTodos",
-				"summary": "getTodos",
-				"tags": [],
+				"summary": "List the signed-in user's todos, newest first.",
+				"tags": [
+					"todos"
+				],
+				"security": [
+					{
+						"cookieAuth": []
+					}
+				],
 				"responses": {
 					"200": {
 						"description": "Successful response",
@@ -835,17 +1270,104 @@
 													"type": "string"
 												}
 											},
-											"required": ["requestId", "timestamp"],
+											"required": [
+												"requestId",
+												"timestamp"
+											],
 											"additionalProperties": false
 										}
 									},
-									"required": ["ok", "data", "meta"],
+									"required": [
+										"ok",
+										"data",
+										"meta"
+									],
 									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ErrorEnvelope"
 								}
 							}
 						}
 					}
 				}
+			}
+		}
+	},
+	"components": {
+		"securitySchemes": {
+			"cookieAuth": {
+				"type": "apiKey",
+				"in": "cookie",
+				"name": "session"
+			}
+		},
+		"schemas": {
+			"ErrorEnvelope": {
+				"type": "object",
+				"properties": {
+					"ok": {
+						"const": false,
+						"type": "boolean"
+					},
+					"error": {
+						"type": "object",
+						"properties": {
+							"code": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							},
+							"details": {
+								"description": "Optional structured details"
+							}
+						},
+						"required": [
+							"code",
+							"message"
+						]
+					},
+					"meta": {
+						"type": "object",
+						"properties": {
+							"requestId": {
+								"type": "string"
+							},
+							"timestamp": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"requestId",
+							"timestamp"
+						],
+						"additionalProperties": false
+					}
+				},
+				"required": [
+					"ok",
+					"error",
+					"meta"
+				],
+				"additionalProperties": false
 			}
 		}
 	}
