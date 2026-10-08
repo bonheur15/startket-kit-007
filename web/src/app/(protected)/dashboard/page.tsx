@@ -1,8 +1,29 @@
-import { Clock, Mail, Shield } from "lucide-react";
+import {
+	ArrowUpRight,
+	Clock,
+	KeyRound,
+	ListTodo,
+	Mail,
+	ShieldCheck,
+} from "lucide-react";
+import { Link } from "react-router";
+import { StatusDot } from "@/components/status-dot";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
+import { useEngine } from "@/lib/engine";
 
 export default function DashboardPage() {
 	const { user } = useAuth();
+	const todos = useEngine("/todos");
+
 	if (!user) return null;
 
 	const memberSince = new Date(user.createdAt).toLocaleDateString(undefined, {
@@ -10,71 +31,145 @@ export default function DashboardPage() {
 		month: "long",
 		day: "numeric",
 	});
+	const open = todos.data?.filter((t) => !t.completed).length ?? 0;
+	const done = todos.data?.filter((t) => t.completed).length ?? 0;
 
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-bold text-slate-800">Account overview</h2>
-				<p className="text-sm text-slate-400">
-					Profile information synchronised from Google.
-				</p>
-			</div>
-
-			<div className="grid gap-6 md:grid-cols-2">
-				<div className="flex flex-col space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-6">
-					<div className="flex items-center gap-4">
+		<div className="grid gap-6 lg:grid-cols-3">
+			<Card className="lg:col-span-2">
+				<CardContent className="p-6 sm:p-8">
+					<div className="flex flex-col gap-6 sm:flex-row sm:items-center">
 						{user.picture ? (
 							<img
 								src={user.picture}
 								alt=""
-								className="h-16 w-16 rounded-full object-cover shadow-sm ring-4 ring-white"
+								className="size-20 rounded-2xl object-cover shadow-md ring-2 ring-accent/40"
 								referrerPolicy="no-referrer"
 							/>
 						) : (
-							<div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-2xl font-bold text-amber-600">
+							<div className="flex size-20 items-center justify-center rounded-2xl bg-accent font-mono text-3xl font-bold text-accent-fg">
 								{(user.name ?? user.email).charAt(0).toUpperCase()}
 							</div>
 						)}
-						<div>
-							<h3 className="text-lg font-bold text-slate-800">
-								{user.name ?? "Unnamed"}
-							</h3>
-							<p className="text-xs text-slate-400">
-								Member since {memberSince}
+						<div className="min-w-0">
+							<div className="flex flex-wrap items-center gap-2">
+								<h2 className="truncate text-2xl font-semibold tracking-tight text-fg">
+									{user.name ?? "Unnamed"}
+								</h2>
+								<Badge variant="accent">
+									<StatusDot pulse />
+									signed in
+								</Badge>
+							</div>
+							<p className="mt-1 flex items-center gap-1.5 text-sm text-fg-muted">
+								<Mail className="size-3.5" aria-hidden />
+								{user.email}
+							</p>
+							<p className="mt-1 font-mono text-xs text-fg-subtle">
+								user #{user.id} · member since {memberSince}
 							</p>
 						</div>
 					</div>
-					<div className="space-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600">
-						<div className="flex items-center gap-2">
-							<Mail className="h-4 w-4 text-slate-400" aria-hidden />
-							<span>{user.email}</span>
-						</div>
-						<div className="flex items-center gap-2">
-							<Shield className="h-4 w-4 text-emerald-500" aria-hidden />
-							<span className="font-medium">Google account linked</span>
-						</div>
-					</div>
-				</div>
 
-				<div className="flex flex-col justify-between space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-6">
-					<div className="space-y-2">
-						<h3 className="flex items-center gap-1.5 font-bold text-slate-800">
-							<Clock className="h-4 w-4 text-amber-500" aria-hidden />
-							Active session
-						</h3>
-						<p className="text-xs leading-relaxed text-slate-500">
-							Sessions are stored hashed in the database, extended automatically
-							while you are active, and can be revoked individually or all at
-							once.
-						</p>
-					</div>
-					<div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-400">
-						<span>Cookie-based, HttpOnly</span>
-						<span className="inline-flex items-center rounded bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">
-							Active
+					<dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4">
+						<Metric
+							label="Open todos"
+							value={todos.isPending ? "…" : String(open)}
+						/>
+						<Metric
+							label="Completed"
+							value={todos.isPending ? "…" : String(done)}
+						/>
+						<Metric label="Provider" value="Google" />
+						<Metric label="Session" value="Active" />
+					</dl>
+				</CardContent>
+			</Card>
+
+			<Card className="bg-ink text-ink-fg">
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<ShieldCheck className="size-4 text-accent" aria-hidden />
+						Security
+					</CardTitle>
+					<CardDescription className="text-ink-muted">
+						How your session is protected.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4 pt-2 text-sm">
+					<Item
+						icon={KeyRound}
+						title="Hashed token"
+						body="Only a SHA-256 hash of your session is stored."
+					/>
+					<Item
+						icon={Clock}
+						title="Sliding expiry"
+						body="Extended automatically while you are active."
+					/>
+					<Button
+						asChild
+						size="sm"
+						variant="soft"
+						className="mt-2 bg-ink-3 text-ink-fg hover:bg-ink-line"
+					>
+						<Link to="/dashboard/settings">
+							Manage session
+							<ArrowUpRight className="size-3.5" aria-hidden />
+						</Link>
+					</Button>
+				</CardContent>
+			</Card>
+
+			<Card className="lg:col-span-3">
+				<CardContent className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+					<div className="flex items-center gap-4">
+						<span className="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent-strong dark:text-accent">
+							<ListTodo className="size-5" aria-hidden />
 						</span>
+						<div>
+							<h3 className="font-semibold text-fg">Todo demo</h3>
+							<p className="text-sm text-fg-muted">
+								Four generated endpoints, optimistic updates, cache
+								invalidation.
+							</p>
+						</div>
 					</div>
-				</div>
+					<Button asChild variant="accent">
+						<Link to="/todos">Open todos</Link>
+					</Button>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="bg-surface px-4 py-4">
+			<dt className="font-mono text-[11px] uppercase tracking-widest text-fg-subtle">
+				{label}
+			</dt>
+			<dd className="tabular mt-1 text-xl font-semibold text-fg">{value}</dd>
+		</div>
+	);
+}
+
+function Item({
+	icon: Icon,
+	title,
+	body,
+}: {
+	icon: typeof Clock;
+	title: string;
+	body: string;
+}) {
+	return (
+		<div className="flex items-start gap-3">
+			<Icon className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+			<div>
+				<p className="font-medium text-ink-fg">{title}</p>
+				<p className="text-xs text-ink-muted">{body}</p>
 			</div>
 		</div>
 	);
