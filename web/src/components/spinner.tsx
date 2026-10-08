@@ -2,9 +2,14 @@ import { Loader2 } from "lucide-react";
 
 export function Spinner({ label = "Loading…" }: { label?: string }) {
 	return (
-		<div className="flex min-h-[320px] flex-col items-center justify-center gap-2">
-			<Loader2 className="h-7 w-7 animate-spin text-amber-500" aria-hidden />
-			<p className="text-sm font-medium text-slate-400">{label}</p>
+		<div className="flex min-h-[320px] flex-col items-center justify-center gap-3">
+			<Loader2
+				className="size-6 animate-spin text-accent-strong dark:text-accent"
+				aria-hidden
+			/>
+			<p className="font-mono text-xs uppercase tracking-widest text-fg-subtle">
+				{label}
+			</p>
 		</div>
 	);
 }
