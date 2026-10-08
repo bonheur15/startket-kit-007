@@ -1,45 +1,29 @@
 # Dependencies
 node_modules/
-engine/node_modules/
-web/node_modules/
 
 # Build output
 dist/
-engine/dist/
-web/dist/
+.wrangler/
+
+# Generated artifacts (rebuilt by `make generate`)
+.generated/
 
 # TypeScript and tool caches
 *.tsbuildinfo
 .cache/
 .tmp/
 
-# Environment files
+# Environment files (keep *.example files)
 .env
-.env.local
-.env.*.local
-engine/.env
-engine/.env.local
-engine/.env.*.local
-web/.env
-web/.env.local
-web/.env.*.local
+.env.*
+!.env.example
+.dev.vars
 
 # Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
 # OS and editor noise
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-
-# Generated
-.generated/
-
-# Cloudflare wrangler
-.wrangler/
-.dev.vars
