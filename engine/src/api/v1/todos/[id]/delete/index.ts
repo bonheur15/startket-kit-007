@@ -1,24 +1,18 @@
 import { and, eq } from "drizzle-orm";
-import { ApiError } from "../../../../../core/api/error";
+import { errors } from "../../../../../core/api/error";
 import { requireAuth } from "../../../../../core/auth/require-auth";
 import { db } from "../../../../../db";
 import { todos } from "../../../../../db/schema";
 
+/** Delete one of the signed-in user's todos. */
 export async function deleteTodo(input: {
-	id: string;
+	id: number;
 }): Promise<{ success: boolean }> {
-	const user = requireAuth();
-	const id = parseInt(input.id, 10);
-	if (Number.isNaN(id)) throw new Error("Invalid ID");
-
-	const result = await db
+	const user = await requireAuth();
+	const deleted = await db
 		.delete(todos)
-		.where(and(eq(todos.id, id), eq(todos.userId, user.id)))
-		.returning();
-
-	if (result.length === 0) {
-		throw new ApiError(404, "NOT_FOUND", "Todo not found");
-	}
-
+		.where(and(eq(todos.id, input.id), eq(todos.userId, user.id)))
+		.returning({ id: todos.id });
+	if (deleted.length === 0) throw errors.notFound("Todo not found");
 	return { success: true };
 }
