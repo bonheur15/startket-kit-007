@@ -1,11 +1,14 @@
 SHELL := /bin/bash
 
-.PHONY: install generate dev dev-worker dev-engine dev-web start-engine test typecheck build verify clean format lint check push
+.PHONY: install generate dev dev-worker dev-engine dev-web start-engine test typecheck build verify clean format lint check fix \
+        db-push db-generate db-migrate db-studio worker-build
+
+## ---- Setup --------------------------------------------------------------
 
 install:
 	bun install
-	cd engine && bun install
-	cd web && bun install
+
+## ---- Code quality -------------------------------------------------------
 
 format:
 	bun run format
@@ -16,8 +19,15 @@ lint:
 check:
 	bun run check
 
+fix:
+	bun run check:fix
+
+## ---- Codegen ------------------------------------------------------------
+
 generate:
 	cd engine && bun run generate
+
+## ---- Development --------------------------------------------------------
 
 dev-engine:
 	cd engine && bun run dev
@@ -25,14 +35,16 @@ dev-engine:
 dev-web:
 	cd web && bun run dev
 
+# Full stack: generator watcher + Bun engine + Vite dev server.
 dev:
 	$(MAKE) generate
 	trap 'kill 0' EXIT; \
 	( cd engine && bun run generate:watch ) & \
-	( cd engine && bun --watch src/index.ts ) & \
+	( cd engine && bun run dev:server ) & \
 	( cd web && bun run dev ) & \
 	wait
 
+# Same as `dev`, but runs the engine inside the Cloudflare Workers runtime.
 dev-worker:
 	$(MAKE) generate
 	trap 'kill 0' EXIT; \
@@ -44,6 +56,8 @@ dev-worker:
 start-engine:
 	$(MAKE) generate
 	cd engine && bun run start
+
+## ---- Verification -------------------------------------------------------
 
 test:
 	$(MAKE) generate
@@ -59,6 +73,10 @@ build:
 	cd engine && bun run build
 	cd web && bun run build
 
+worker-build:
+	$(MAKE) generate
+	cd engine && bun run worker:build
+
 verify:
 	$(MAKE) check
 	$(MAKE) test
@@ -66,7 +84,21 @@ verify:
 	$(MAKE) build
 
 clean:
-	rm -rf engine/dist
+	rm -rf engine/dist web/dist engine/.generated web/.generated engine/.wrangler
 
-push:
+## ---- Database -----------------------------------------------------------
+
+# Push the schema directly (fast iteration in development).
+db-push:
 	cd engine && bun run db:push
+
+# Generate a SQL migration from schema changes (commit the result).
+db-generate:
+	cd engine && bun run db:generate
+
+# Apply pending migrations (use in CI/production).
+db-migrate:
+	cd engine && bun run db:migrate
+
+db-studio:
+	cd engine && bun run db:studio
