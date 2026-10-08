@@ -1,48 +1,51 @@
-name: Deploy Web to Cloudflare Pages
+name: Deploy Web (Cloudflare Pages)
 
 on:
-  # manual trigger
   workflow_dispatch:
-
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "web/**"
-      - "engine/**"
-      - "Makefile"
-  pull_request:
-    paths:
-      - "web/**"
-      - "engine/**"
-      - "Makefile"
+      - "engine/src/api/**"
+      - "engine/scripts/**"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/deploy-web.yml"
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
       deployments: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Install Dependencies
-        run: make install
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - name: Build Web Application
+      - name: Generate API artifacts
+        run: make generate
+
+      - name: Typecheck
+        run: cd web && bun run typecheck
+
+      - name: Build
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-        run: make build
+        run: cd web && bun run build
 
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bunx wrangler pages deploy web/dist --project-name=starterkit-007
+        run: bunx wrangler pages deploy web/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'starterkit-007' }}
