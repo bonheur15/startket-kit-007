@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from "react-router";
+import { PageHeader } from "@/components/page-header";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -7,16 +9,21 @@ const tabs = [
 ];
 
 export default function DashboardLayout() {
-	return (
-		<section>
-			<h1 className="mb-1 text-3xl font-extrabold tracking-tight text-slate-800">
-				Dashboard
-			</h1>
-			<p className="mb-6 text-sm font-medium text-slate-400">
-				Manage your profile and active session.
-			</p>
+	const { user } = useAuth();
+	const firstName = user?.name?.split(" ")[0];
 
-			<nav className="mb-6 flex gap-2" aria-label="Dashboard">
+	return (
+		<div className="mx-auto max-w-5xl">
+			<PageHeader
+				eyebrow="Account"
+				title={firstName ? `Welcome back, ${firstName}` : "Dashboard"}
+				description="Your profile, session and preferences. Everything here is served by protected endpoints."
+			/>
+
+			<nav
+				className="mb-6 flex gap-1 border-b border-line"
+				aria-label="Dashboard"
+			>
 				{tabs.map((tab) => (
 					<NavLink
 						key={tab.to}
@@ -24,10 +31,10 @@ export default function DashboardLayout() {
 						end={tab.end}
 						className={({ isActive }) =>
 							cn(
-								"rounded-xl border px-4 py-2 text-sm font-semibold transition-all",
+								"-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
 								isActive
-									? "border-slate-900 bg-slate-900 text-white"
-									: "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+									? "border-accent text-fg"
+									: "border-transparent text-fg-muted hover:border-line-strong hover:text-fg",
 							)
 						}
 					>
@@ -36,9 +43,7 @@ export default function DashboardLayout() {
 				))}
 			</nav>
 
-			<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-				<Outlet />
-			</div>
-		</section>
+			<Outlet />
+		</div>
 	);
 }
