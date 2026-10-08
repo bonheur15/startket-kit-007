@@ -292,6 +292,35 @@ describe("cors", () => {
 		);
 	});
 
+	test("loopback origins are allowed outside production", async () => {
+		const app = createTestRuntime();
+		for (const origin of [
+			"http://127.0.0.1:5173",
+			"http://localhost:4000",
+			"http://[::1]:5173",
+		]) {
+			const response = await app.fetch(
+				new Request("http://x/api/v1/echo", { headers: { origin } }),
+			);
+			expect(response.headers.get("access-control-allow-origin")).toBe(origin);
+		}
+	});
+
+	test("loopback origins are not implicitly allowed in production", async () => {
+		useTestEnv({
+			NODE_ENV: "production",
+			DATABASE_URL: "postgres://x@db/x",
+			CORS_ORIGINS: "https://app.example.com",
+		});
+		const app = createTestRuntime();
+		const response = await app.fetch(
+			new Request("http://x/api/v1/echo", {
+				headers: { origin: "http://127.0.0.1:5173" },
+			}),
+		);
+		expect(response.headers.get("access-control-allow-origin")).toBeNull();
+	});
+
 	test("unknown origins get no CORS headers", async () => {
 		const app = createTestRuntime();
 		const response = await app.fetch(
