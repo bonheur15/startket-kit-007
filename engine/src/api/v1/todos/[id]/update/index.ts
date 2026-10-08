@@ -1,38 +1,42 @@
 import { and, eq } from "drizzle-orm";
-import { ApiError } from "../../../../../core/api/error";
+import { errors } from "../../../../../core/api/error";
 import { requireAuth } from "../../../../../core/auth/require-auth";
 import { db } from "../../../../../db";
 import { todos } from "../../../../../db/schema";
+import type { TodoResponse } from "../../index";
 
-type TodoResponse = {
-	id: number;
-	title: string;
-	completed: boolean;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
+/** Update the title and/or completion state of one of the signed-in user's todos. */
 export async function updateTodo(input: {
-	id: string;
-	completed?: boolean;
+	id: number;
 	title?: string;
+	completed?: boolean;
 }): Promise<TodoResponse> {
-	const user = requireAuth();
-	const id = parseInt(input.id, 10);
-	if (Number.isNaN(id)) throw new Error("Invalid ID");
+	const user = await requireAuth();
+
+	const patch: Partial<{ title: string; completed: boolean }> = {};
+	if (input.title !== undefined) {
+		const title = input.title.trim();
+		if (title.length === 0 || title.length > 200) {
+			throw errors.badRequest("Title must be between 1 and 200 characters");
+		}
+		patch.title = title;
+	}
+	if (input.completed !== undefined) patch.completed = input.completed;
+	if (Object.keys(patch).length === 0) {
+		throw errors.badRequest("Provide at least one field to update");
+	}
 
 	const [todo] = await db
 		.update(todos)
-		.set({
-			...(input.completed !== undefined ? { completed: input.completed } : {}),
-			...(input.title !== undefined ? { title: input.title } : {}),
-		})
-		.where(and(eq(todos.id, id), eq(todos.userId, user.id)))
-		.returning();
-
-	if (!todo) {
-		throw new ApiError(404, "NOT_FOUND", "Todo not found");
-	}
-
-	return todo as TodoResponse;
+		.set(patch)
+		.where(and(eq(todos.id, input.id), eq(todos.userId, user.id)))
+		.returning({
+			id: todos.id,
+			title: todos.title,
+			completed: todos.completed,
+			createdAt: todos.createdAt,
+			updatedAt: todos.updatedAt,
+		});
+	if (!todo) throw errors.notFound("Todo not found");
+	return todo;
 }
