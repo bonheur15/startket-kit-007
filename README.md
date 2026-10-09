@@ -181,6 +181,16 @@ Errors are `ApiClientError` instances with `status`, `code`, `requestId`, and `i
 
 A route module may also export `ErrorBoundary`, `loader`, `action` and `handle`. Everything under `(protected)/` is wrapped in `<RequireAuth>`, which sends anonymous visitors to `/login?redirect=…`.
 
+## UI and theming
+
+The web app ships with a small design system instead of ad-hoc Tailwind classes:
+
+- **Semantic colour tokens** in `web/src/index.css` (`bg-canvas`, `bg-surface`, `text-fg`, `text-fg-muted`, `border-line`, `bg-accent`, `bg-ink`, …). Light and dark values live side by side; pages never reference raw palette colours, so rebranding is a one-file change.
+- **Light / dark theme** via a `.dark` class on `<html>`. An inline script in `index.html` applies the saved choice before first paint; `useTheme()` and `<ThemeToggle />` switch it, and the OS preference is followed until the user picks one.
+- **Primitives** in `web/src/components/ui/` (`Button`, `Card`, `Badge`, `Input`) plus shared pieces (`PageHeader`, `CodeBlock`, `EmptyState`, `StatusDot`, `Spinner`, `Brand`). shadcn components added later pick up the same tokens through the `--primary` / `--border` aliases.
+- **Typography**: Geist for text, Geist Mono for code, paths and identifiers.
+- Entrance animations respect `prefers-reduced-motion`.
+
 ## Authentication
 
 1. `/api/auth/google/login?redirect=/dashboard` stores a random `state` + PKCE verifier in a short-lived HttpOnly cookie and redirects to Google.

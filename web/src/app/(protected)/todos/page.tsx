@@ -23,7 +23,11 @@ export default function TodosPage() {
 					endpoints
 				</span>
 				{ENDPOINTS.map((endpoint) => (
-					<Badge key={endpoint.path} variant={endpoint.variant} className="normal-case tracking-normal">
+					<Badge
+						key={endpoint.path}
+						variant={endpoint.variant}
+						className="normal-case tracking-normal"
+					>
 						<span className="font-bold">{endpoint.method}</span>
 						<span className="font-mono font-medium">{endpoint.path}</span>
 					</Badge>

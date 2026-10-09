@@ -49,7 +49,7 @@ export default function LoginPage() {
 						))}
 					</ul>
 				</div>
-				<p className="font-mono text-[11px] text-ink-muted">
+				<p className="pt-8 font-mono text-[11px] text-ink-muted">
 					engine · /api/auth/google
 				</p>
 			</div>

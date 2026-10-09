@@ -32,6 +32,15 @@ function OutletRoute() {
 	return <Outlet />;
 }
 
+/** Shown while the first lazy route module loads. */
+function HydrateFallback() {
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-canvas">
+			<div className="size-6 animate-spin rounded-full border-2 border-line-strong border-t-accent" />
+		</div>
+	);
+}
+
 function createNode(folderName: string): RouteNode {
 	return {
 		folderName,
@@ -200,6 +209,7 @@ export function createFileRoutes(): RouteObject[] {
 			path: "/",
 			Component: root.layout ? undefined : OutletRoute,
 			lazy: root.layout ? lazyRoute(root.layout) : undefined,
+			HydrateFallback,
 			children: rootChildren,
 		},
 	];

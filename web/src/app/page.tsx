@@ -149,7 +149,7 @@ export default function HomePage() {
 						)}
 					</div>
 
-					<dl className="mt-10 grid max-w-md grid-cols-3 gap-6 border-t border-line pt-6">
+					<dl className="mt-10 grid max-w-md grid-cols-3 items-end gap-6 border-t border-line pt-6">
 						<Stat label="Endpoints" value="10" />
 						<Stat label="Hand-written types" value="0" />
 						<Stat label="Runtimes" value="2" />
